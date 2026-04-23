@@ -1,6 +1,5 @@
 <?php include 'header.php'; ?>
 <?php
-// Bloqueia acesso se estiver logado como Gestor ou Paciente
 if (isset($_SESSION['usuario']) && $_SESSION['role'] != 'M') {
     header('Location: index.php');
     exit;
@@ -25,39 +24,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $allergies = $_POST['allergies'];
     $chronic   = $_POST['chronic_diseases'];
 
-    // Verificar se o username já existe
-    $check = mysqli_query($connect, "SELECT ID FROM USERS WHERE USERNAME = '$username'");
-    if (mysqli_num_rows($check) > 0) {
-        $erro = 'Username já existe, escolhe outro.';
-    } else {
-        // Inserir em USERS
-        $sql_user = "INSERT INTO USERS (NAME, USERNAME, PASSWORD, EMAIL, ROLE) 
-                     VALUES ('$name', '$username', SHA2('$password', 256), '$email', 'P')";
+    // Processar foto
+    $photo = null;
+    if (isset($_FILES['photo']) && $_FILES['photo']['error'] === 0) {
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png'];
+        $file_type = $_FILES['photo']['type'];
 
-        if (mysqli_query($connect, $sql_user)) {
-            $new_id = mysqli_insert_id($connect);
+        if (!in_array($file_type, $allowed_types)) {
+            $erro = 'A foto deve ser JPG ou PNG.';
+        } else {
+            $photo = file_get_contents($_FILES['photo']['tmp_name']);
+            $photo = mysqli_real_escape_string($connect, $photo);
+        }
+    }
 
-            // Inserir em PATIENTS
-            $sql_patient = "INSERT INTO PATIENTS (USER_ID, DATE_OF_BIRTH, SEX, NIF, ADDRESS, DISTRICT, ALLERGIES, CHRONIC_DISEASES) 
-                            VALUES ('$new_id', '$dob', '$sex', '$nif', '$address', '$district', '$allergies', '$chronic')";
+    if (!$erro) {
+        // Verificar se o username já existe
+        $check = mysqli_query($connect, "SELECT ID FROM USERS WHERE USERNAME = '$username'");
+        if (mysqli_num_rows($check) > 0) {
+            $erro = 'Username já existe, escolhe outro.';
+        } else {
+            // Inserir em USERS
+            if ($photo) {
+                $sql_user = "INSERT INTO USERS (NAME, USERNAME, PASSWORD, EMAIL, ROLE, PHOTO) 
+                             VALUES ('$name', '$username', SHA2('$password', 256), '$email', 'P', '$photo')";
+            } else {
+                $sql_user = "INSERT INTO USERS (NAME, USERNAME, PASSWORD, EMAIL, ROLE) 
+                             VALUES ('$name', '$username', SHA2('$password', 256), '$email', 'P')";
+            }
 
-            if (mysqli_query($connect, $sql_patient)) {
-                // Auto-registo (sem sessão de médico) -> login automático
-                if (!isset($_SESSION['usuario'])) {
-                    $_SESSION['usuario'] = $username;
-                    $_SESSION['user_id'] = $new_id;
-                    $_SESSION['role']    = 'P';
-                    header('Location: index.php?sucesso=1');
-                    exit;
+            if (mysqli_query($connect, $sql_user)) {
+                $new_id = mysqli_insert_id($connect);
+
+                // Inserir em PATIENTS
+                $sql_patient = "INSERT INTO PATIENTS (USER_ID, DATE_OF_BIRTH, SEX, NIF, ADDRESS, DISTRICT, ALLERGIES, CHRONIC_DISEASES) 
+                                VALUES ('$new_id', '$dob', '$sex', '$nif', '$address', '$district', '$allergies', '$chronic')";
+
+                if (mysqli_query($connect, $sql_patient)) {
+                    if (!isset($_SESSION['usuario'])) {
+                        $_SESSION['usuario'] = $username;
+                        $_SESSION['user_id'] = $new_id;
+                        $_SESSION['role']    = 'P';
+                        header('Location: index.php?sucesso=1');
+                        exit;
+                    } else {
+                        $sucesso = 'Paciente registado com sucesso!';
+                    }
                 } else {
-                    // Médico criou o paciente -> fica na página
-                    $sucesso = 'Paciente registado com sucesso!';
+                    $erro = 'Erro ao criar ficha de paciente: ' . mysqli_error($connect);
                 }
             } else {
-                $erro = 'Erro ao criar ficha de paciente: ' . mysqli_error($connect);
+                $erro = 'Erro ao criar utilizador: ' . mysqli_error($connect);
             }
-        } else {
-            $erro = 'Erro ao criar utilizador: ' . mysqli_error($connect);
         }
     }
 }
@@ -73,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p style="color: #4fbc4f;"><?php echo $sucesso; ?></p>
         <?php endif; ?>
 
-        <form action="register_patient.php" method="post">
+        <form action="register_patient.php" method="post" enctype="multipart/form-data">
 
             <h3>Dados de Acesso</h3>
             <table>
@@ -93,6 +111,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tr>
                     <td>Email</td>
                     <td><input type="email" name="email"></td>
+                </tr>
+                <tr>
+                    <td>Foto</td>
+                    <td><input type="file" name="photo" accept=".jpg,.jpeg,.png"></td>
                 </tr>
             </table>
 
@@ -136,13 +158,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </table>
 
             <div style="margin-top: 15px;">
-                <button type="submit">Registar</button>
+                <button type="submit">Registar Paciente</button>
                 <?php if (isset($_SESSION['usuario'])): ?>
                     <button type="button" onclick="window.location.href='users.php?pagina=1'">Cancelar</button>
                 <?php else: ?>
                     <button type="button" onclick="window.location.href='login.php'">Cancelar</button>
                 <?php endif; ?>
             </div>
+
         </form>
     </div>
 

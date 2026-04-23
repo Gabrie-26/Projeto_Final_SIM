@@ -1,6 +1,6 @@
 <?php include 'header.php' ?>
 <?php if (isset($_GET['sucesso'])): ?>
-    <p style="color: #4fbc4f; text-align: center;">Login bem sucedido! Bem-vindo, admin.</p>
+    <p style="color: #4fbc4f; text-align: center;">Login bem sucedido! Bem-vindo.</p>
 <?php endif; ?>
     <div class="contents">
         <div class="contents-left">
