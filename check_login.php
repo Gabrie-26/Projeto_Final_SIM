@@ -23,7 +23,7 @@ $number = mysqli_num_rows($result);
 if ($number == 1) {
     $row = mysqli_fetch_assoc($result);
     $_SESSION['usuario'] = $row['USERNAME'];
-    $_SESSION['id'] = $row['ID'];
+    $_SESSION['user_id'] = $row['ID'];
     $_SESSION['role'] = $row['ROLE'];
     header('Location: index.php?sucesso=1');
     exit;

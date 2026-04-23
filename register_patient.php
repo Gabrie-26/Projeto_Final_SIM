@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password  = $_POST['password'];
     $email     = $_POST['email'];
     $dob       = $_POST['date_of_birth'];
-    $sex       = $_POST['sex'];
+    $gender    = $_POST['gender'];
     $nif       = $_POST['nif'];
     $address   = $_POST['address'];
     $district  = $_POST['district'];
@@ -57,8 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $new_id = mysqli_insert_id($connect);
 
                 // Inserir em PATIENTS
-                $sql_patient = "INSERT INTO PATIENTS (USER_ID, DATE_OF_BIRTH, SEX, NIF, ADDRESS, DISTRICT, ALLERGIES, CHRONIC_DISEASES) 
-                                VALUES ('$new_id', '$dob', '$sex', '$nif', '$address', '$district', '$allergies', '$chronic')";
+                $sql_patient = "INSERT INTO PATIENTS (USER_ID, DATE_OF_BIRTH, GENDER, NIF, ADDRESS, DISTRICT, ALLERGIES, CHRONIC_DISEASES) 
+                                VALUES ('$new_id', '$dob', '$gender', '$nif', '$address', '$district', '$allergies', '$chronic')";
 
                 if (mysqli_query($connect, $sql_patient)) {
                     if (!isset($_SESSION['usuario'])) {
@@ -126,9 +126,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <td><input type="date" name="date_of_birth"></td>
                 </tr>
                 <tr>
-                    <td>Sexo</td>
+                    <td>Género</td>
                     <td>
-                        <select name="sex">
+                        <select name="gender">
                             <option value="M">Masculino</option>
                             <option value="F">Feminino</option>
                             <option value="O">Outro</option>
