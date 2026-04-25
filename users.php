@@ -31,7 +31,8 @@ if ($pagina_atual > $pagina_total) $pagina_atual = $pagina_total;
 // Offset
 $offset = ($pagina_atual - 1) * $por_pagina;
 
-$sql = "SELECT ID, NAME, USERNAME, ROLE, CREATION_DATE FROM USERS";
+$sql = "SELECT ID, NAME, USERNAME, ROLE, CREATION_DATE FROM USERS
+        LIMIT $por_pagina OFFSET $offset";
 
 $result = mysqli_query($connect, $sql)
 or die('The query failed: ' . mysqli_error($connect));
@@ -46,7 +47,7 @@ or die('The query failed: ' . mysqli_error($connect));
                 <th>ID</th>
                 <th>Nome</th>
                 <th>Username</th>
-                <th>Role</th>
+                <th>Função</th>
                 <th>Data de Registo</th>
             </tr>
 
@@ -55,7 +56,10 @@ or die('The query failed: ' . mysqli_error($connect));
                     <td><?php echo $row['ID']; ?></td>
                     <td><?php echo $row['NAME']; ?></td>
                     <td><?php echo $row['USERNAME']; ?></td>
-                    <td><?php echo $row['ROLE']; ?></td>
+                    <?php
+                    $role_label = ['M' => 'Médico', 'P' => 'Paciente', 'G' => 'Gestor'];
+                    ?>
+                    <td><?php echo $role_label[$row['ROLE']] ?></td>
                     <td><?php echo $row['CREATION_DATE']; ?></td>
                 </tr>
             <?php } ?>
