@@ -57,7 +57,7 @@ or die('The query failed: ' . mysqli_error($connect));
                     <td><?php echo $row['NAME']; ?></td>
                     <td><?php echo $row['USERNAME']; ?></td>
                     <?php $role_label = ['M' => 'Médico', 'P' => 'Paciente', 'G' => 'Gestor']; ?>
-                    <td><?php echo $role_label[$row['ROLE']] ?? '-'; ?></td>
+                    <td><?php echo isset($role_label[$row['ROLE']]) ? $role_label[$row['ROLE']] : '-'; ?></td>
                     <td><?php echo $row['CREATION_DATE']; ?></td>
                     <td>
                         <button type="button" onclick="window.location.href='user_detail.php?id=<?php echo $row['ID']; ?>'">Ver Ficha</button>
