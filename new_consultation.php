@@ -16,11 +16,12 @@ $patient_id = isset($_POST['patient_id']) ? (int)$_POST['patient_id'] : 0;
 // FASE 2 — Guardar consulta
 if ($fase == 2 && isset($_POST['guardar'])) {
     $medic_id     = $_SESSION['user_id'];
-    $weight       = $_POST['weight'];
-    $height       = $_POST['height'];
-    $temperature  = $_POST['temperature'];
-    $blood_pressure = $_POST['blood_pressure'];
-    $summary      = $_POST['summary'];
+    $weight         = !empty($_POST['weight'])       ? $_POST['weight']       : null;
+    $height         = !empty($_POST['height'])       ? $_POST['height']       : null;
+    $temperature    = !empty($_POST['temperature'])  ? $_POST['temperature']  : null;
+    $blood_pressure = !empty($_POST['blood_pressure']) ? $_POST['blood_pressure'] : null;
+    $summary        = !empty($_POST['summary'])      ? $_POST['summary']      : null;
+    $specialty      = !empty($_POST['specialty'])    ? $_POST['specialty']    : null;
     $medications  = isset($_POST['medications']) ? $_POST['medications'] : [];
 
     // Processar imagem
@@ -35,23 +36,34 @@ if ($fase == 2 && isset($_POST['guardar'])) {
         }
     }
 
+    $w  = $weight       !== null ? "'$weight'"       : "NULL";
+    $h  = $height       !== null ? "'$height'"       : "NULL";
+    $t  = $temperature  !== null ? "'$temperature'"  : "NULL";
+    $bp = $blood_pressure !== null ? "'$blood_pressure'" : "NULL";
+    $s  = $summary      !== null ? "'$summary'"      : "NULL";
+    $sp = $specialty    !== null ? "'$specialty'"    : "NULL";
+
     if (!$erro) {
         if ($image) {
-            $sql_cons = "INSERT INTO CONSULTATIONS (MEDIC_ID, PATIENT_ID, WEIGHT, HEIGHT, TEMPERATURE, BLOOD_PRESSURE, SUMMARY, IMAGE)
-                         VALUES ('$medic_id', '$patient_id', '$weight', '$height', '$temperature', '$blood_pressure', '$summary', '$image')";
+            $sql_cons = "INSERT INTO CONSULTATIONS (MEDIC_ID, PATIENT_ID, WEIGHT, HEIGHT, TEMPERATURE, BLOOD_PRESSURE, SUMMARY, IMAGE, SPECIALTY)
+                 VALUES ('$medic_id', '$patient_id', $w, $h, $t, $bp, $s, '$image', $sp)";
         } else {
-            $sql_cons = "INSERT INTO CONSULTATIONS (MEDIC_ID, PATIENT_ID, WEIGHT, HEIGHT, TEMPERATURE, BLOOD_PRESSURE, SUMMARY)
-                         VALUES ('$medic_id', '$patient_id', '$weight', '$height', '$temperature', '$blood_pressure', '$summary')";
+            $sql_cons = "INSERT INTO CONSULTATIONS (MEDIC_ID, PATIENT_ID, WEIGHT, HEIGHT, TEMPERATURE, BLOOD_PRESSURE, SUMMARY, SPECIALTY)
+                 VALUES ('$medic_id', '$patient_id', $w, $h, $t, $bp, $s, $sp)";
         }
 
         if (mysqli_query($connect, $sql_cons)) {
             $consultation_id = mysqli_insert_id($connect);
 
             // Inserir medicamentos selecionados
+            $end_dates = isset($_POST['end_dates']) ? $_POST['end_dates'] : [];
+
             foreach ($medications as $med_id) {
-                $med_id = (int)$med_id;
-                $sql_pres = "INSERT INTO PRESCRIPTIONS (CONSULTATION_ID, MEDICATION_ID, START_DATE)
-                             VALUES ('$consultation_id', '$med_id', CURDATE())";
+                $med_id   = (int)$med_id;
+                $end_date = !empty($end_dates[$med_id]) ? "'" . $end_dates[$med_id] . "'" : "NULL";
+
+                $sql_pres = "INSERT INTO PRESCRIPTIONS (CONSULTATION_ID, MEDICATION_ID, START_DATE, END_DATE)
+                 VALUES ('$consultation_id', '$med_id', CURDATE(), $end_date)";
                 mysqli_query($connect, $sql_pres);
             }
 
@@ -160,9 +172,14 @@ if ($patient_id > 0) {
                         <td><input type="text" name="blood_pressure" placeholder="ex: 120/80"></td>
                     </tr>
                     <tr>
-                        <td>Imagem</td>
+                        <td>Especialidade</td>
+                        <td><input type="text" name="specialty" placeholder="ex: Medicina Geral, Cardiologia..."></td>
+                    </tr>
+                    <tr>
+                        <td>Imagem do exame (se realizado)</td>
                         <td><input type="file" name="image" accept=".jpg,.jpeg,.png"></td>
                     </tr>
+
                 </table>
 
                 <h3>Medicamentos</h3>
@@ -184,7 +201,8 @@ if ($patient_id > 0) {
                 </button>
 
                 <table id="tabela-medicamentos" style="margin-top:10px;">
-                    <tr><th>Selecionar</th><th>Nome</th><th>Folheto</th></tr>
+                    <tr><th>Selecionar</th><th>Nome</th><th>Folheto</th><th>Data de Fim</th></tr>
+
                     <?php foreach ($medications_array as $med): ?>
                         <tr>
                             <td><input type="checkbox" name="medications[]" value="<?php echo $med['ID']; ?>"></td>
@@ -196,6 +214,7 @@ if ($patient_id > 0) {
                                     -
                                 <?php endif; ?>
                             </td>
+                            <td><input type="date" name="end_dates[<?php echo $med['ID']; ?>]"></td>
                         </tr>
                     <?php endforeach; ?>
                 </table>
@@ -228,10 +247,11 @@ if ($patient_id > 0) {
                                     const tabela = document.getElementById('tabela-medicamentos');
                                     const novaLinha = tabela.insertRow(-1);
                                     novaLinha.innerHTML = `
-                <td><input type="checkbox" name="medications[]" value="${data.id}" checked></td>
-                <td>${data.name}</td>
-                <td>${leaflet ? '<a href="' + leaflet + '" target="_blank">Ver Folheto</a>' : '-'}</td>
-            `;
+        <td><input type="checkbox" name="medications[]" value="${data.id}" checked></td>
+        <td>${data.name}</td>
+        <td>${leaflet ? '<a href="' + leaflet + '" target="_blank">Ver Folheto</a>' : '-'}</td>
+        <td><input type="date" name="end_dates[${data.id}]"></td>
+    `;
 
                                     // Limpar e fechar o formulário
                                     document.getElementById('novo-med-nome').value = '';
